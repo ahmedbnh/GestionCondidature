@@ -1,0 +1,6 @@
+com\candidature\application\GestionCondidatureApplication.class
+com\candidature\application\repositories\CandidatureRepository.class
+com\candidature\application\entities\Emploi.class
+com\candidature\application\entities\Candidature.class
+com\candidature\application\entities\UserModel.class
+com\candidature\application\controllers\CandidatureController.class
