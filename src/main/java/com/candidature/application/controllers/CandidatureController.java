@@ -6,6 +6,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -17,6 +19,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.http.HttpEntity;
 
 import com.candidature.application.entities.Candidature;
 import com.candidature.application.repositories.CandidatureRepository;
@@ -33,6 +38,9 @@ public class CandidatureController {
 	@Autowired
 	private CandidatureRepository cand_rep;
 	
+	public static String getBearerTokenHeader() {
+	    return ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest().getHeader("Authorization");
+	  }
 	
 	@GetMapping("/candidatures")
 	public ResponseEntity<?> getAllCandidature() {
@@ -44,8 +52,8 @@ public class CandidatureController {
 		}
 	}
 
-	@PostMapping("/postuler/{id_emp}/{id_user}")
-	public ResponseEntity<?> addCandidature(@RequestBody Candidature candidature, @PathVariable String id_emp, @PathVariable String id_user) {
+	@PostMapping("/postuler/{id_emp}")
+	public ResponseEntity<?> addCandidature(@RequestBody Candidature candidature, @PathVariable String id_emp) {
 		try {
 			Candidature c = new Candidature();
 			c.setCv_cand(candidature.getCv_cand());
@@ -53,14 +61,18 @@ public class CandidatureController {
 			c.setOther_cand(candidature.getOther_cand());
 			
 			//Emploi e = emp_rep.findById(id_emp).get();
-			Object e = rtb.build().getForObject("http://localhost:8082/emploi/"+id_emp, Object.class);
+			Object e = rtb.build().getForObject("https://jobrecruitement.herokuapp.com/emploibyid/"+id_emp, Object.class);
 			/*if (emp_rep.findById(id_emp).isPresent()) {
 				c.setEmploi_cand(e);
 			}*/
 			//UserModel u = user_rep.findById(id_user).get();
-			Object u = rtb.build().getForObject("http://localhost:8087/get-user/"+id_user, Object.class);
 			c.setEmploi_cand(e);
-			c.setUser_model(u);
+			HttpHeaders headers = new HttpHeaders();
+			headers.add("Authorization", getBearerTokenHeader());
+		    HttpEntity<String> entity = new HttpEntity<String>("parameters", headers);
+		    ResponseEntity<String> response = rtb.build().exchange("https://authrecruitement.herokuapp.com/getuserconnected", HttpMethod.GET, entity, String.class);
+			c.setUser_model(response.getBody());
+			
 			/*if (user_rep.findById(id_user).isPresent()) {
 				c.setUser_model(u);
 			} else {
